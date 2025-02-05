@@ -1,70 +1,34 @@
-const ampq = require("amqplib");
-
-/**
- * Sends an email message using RabbitMQ.
- *
- * @async
- * @function sendMail
- * @param {Object} params - The parameters for sending the email.
- * @throws Will throw an error if the connection to RabbitMQ    fails.
- *
- * @example
- * sendMail({
- *   to: "rahul@gmail.com",
- *   from: "ravi@gmail.com",
- *   subject: "Hello TP Mail",
- *   body: "Hello TP Mail"
- * });
- *
- * @description
- * This function connects to a RabbitMQ server, creates a channel, and sends an email message to a specified exchange with a routing key.
- *
- * @returns {Promise<void>} - A promise that resolves when the email message is sent.
- *
- * @line const connection = await ampq.connect("amqp://localhost"); - Connects to the RabbitMQ server.
- * @line const channel = await connection.createChannel(); - Creates a channel on the RabbitMQ server.
- * @line const exchange = "mail_exchange"; - The name of the exchange to send the message to.
- * @line const routingKey = "send_mail"; - The routing key for the message.
- * @line const message = { to: "rahul@gmail.com", from: "ravi@gmail.com", subject: "Hello TP Mail", body: "Hello TP Mail" }; - The email message to be sent.
- * @line await channel.assertExchange(exchange, 'direct', { durable: false }); - Asserts that the exchange exists.
- * @line await channel.assertQueue("mail_queue", { durable: false }); - Asserts that the queue exists.
- * @line await channel.bindQueue("mail_queue", exchange, routingKey); - Binds the queue to the exchange with the routing key.
- */
-async function sendMail(params) {
+const ampq = require("amqplib"); 
+async function sendMail(routingKey, message) { 
   try {
-    const connection = await ampq.connect("amqp://localhost");
-    const channel = await connection.createChannel();
-    const exchange = "mail_exchange"; //exchange name
-    const routingKeyForNormalUser = "send_mail_to_normal_user"; // Routing key for normal users
-    const routingKeyForSubscribedUsers = "send_mail_to_subscribed_users"; // Routing key for subscribed users
+    const connection = await ampq.connect("amqp://localhost"); // Establish a connection to the RabbitMQ server running on localhost
+    const channel = await connection.createChannel(); // Create a channel on the established connection
+    const exchange = "notification_exchange"; // Define the name of the exchange
+    const exchangeType = "topic"; // Define the type of the exchange as 'topic'
 
-    const message = {
-      to: "realtime@gmail.com",
-      from: "ravi@gmail.com",
-      subject: "Hello TP Mail",
-      body: "Hello TP Mail",
-    };
-    await channel.assertExchange(exchange, "direct", { durable: false });
+    await channel.assertExchange(exchange, exchangeType, { durable: true }); // Assert the exchange with the specified name and type, and set it as durable
 
-    await channel.assertQueue("subscribed_user_mail_queue", { durable: false });
-    await channel.assertQueue("normal_user_mail_queue", { durable: false });
+  
 
-    await channel.bindQueue("subscribed_user_mail_queue", exchange, routingKeyForSubscribedUsers);
-    await channel.bindQueue("normal_user_mail_queue", exchange, routingKeyForNormalUser);
-    
-    await channel.publish(
+    await channel.publish( // Publish a message to the exchange with the specified routing key
       exchange,
-      routingKeyForSubscribedUsers,
-      Buffer.from(JSON.stringify(message))
+      routingKey,
+      Buffer.from(JSON.stringify(message)) // Convert the message to a Buffer
     );
-    console.log("Message sent successfully", message);
+    console.log("[x] Sent '%s':'%s'", routingKey, JSON.stringify(message)); // Log the sent message with its routing key
+    console.log( // Log additional information about the sent message
+      `Msg was sent! with routing key as ${routingKey} and the content as ${JSON.stringify(
+        message
+      )}`
+    );
 
-    setTimeout(() => {
+    setTimeout(() => { // Close the connection after a 1-second delay
       connection.close();
     }, 1000);
-  } catch (err) {
-    console.log(err);
+  } catch (err) { // Catch any errors that occur during the process
+    console.log("ERROR: ", err); // Log the error
   }
 }
 
-sendMail();
+sendMail("order.placed",{orderId: "12345", message: "Order placed successfully"}); // Call the sendMail function with the specified routing key and message
+sendMail("payment.processed",{paymentId: "67890", message: "Payment processed successfully"}); // Call the sendMail function with a different routing key and message
