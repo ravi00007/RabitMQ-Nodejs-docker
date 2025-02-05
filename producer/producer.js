@@ -35,7 +35,8 @@ async function sendMail(params) {
     const connection = await ampq.connect("amqp://localhost");
     const channel = await connection.createChannel();
     const exchange = "mail_exchange"; //exchange name
-    const routingKey = "send_mail"; //routing key
+    const routingKeyForNormalUser = "send_mail_to_normal_user"; // Routing key for normal users
+    const routingKeyForSubscribedUsers = "send_mail_to_subscribed_users"; // Routing key for subscribed users
 
     const message = {
       to: "realtime@gmail.com",
@@ -44,11 +45,16 @@ async function sendMail(params) {
       body: "Hello TP Mail",
     };
     await channel.assertExchange(exchange, "direct", { durable: false });
-    await channel.assertQueue("mail_queue", { durable: false });
-    await channel.bindQueue("mail_queue", exchange, routingKey);
+
+    await channel.assertQueue("subscribed_user_mail_queue", { durable: false });
+    await channel.assertQueue("normal_user_mail_queue", { durable: false });
+
+    await channel.bindQueue("subscribed_user_mail_queue", exchange, routingKeyForSubscribedUsers);
+    await channel.bindQueue("normal_user_mail_queue", exchange, routingKeyForNormalUser);
+    
     await channel.publish(
       exchange,
-      routingKey,
+      routingKeyForSubscribedUsers,
       Buffer.from(JSON.stringify(message))
     );
     console.log("Message sent successfully", message);
@@ -60,6 +66,5 @@ async function sendMail(params) {
     console.log(err);
   }
 }
-
 
 sendMail();
