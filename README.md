@@ -282,3 +282,21 @@ async function receiveMessages() {
 
 receiveMessages();
 ```
+
+
+## RabbitMQ Exchange Types
+
+| Exchange Type | Routing Key | Use Case | Performance | Considerations |
+|---|---|---|---|---|
+| **Direct** | Exact match | Simple routing (e.g., log severity, command routing) | Fast (O(1) lookups) | Best for scenarios where you need precise control over which queues receive messages. |
+| **Topic** | Wildcard patterns (`*`, `#`) | Multi-level categorization (e.g., IoT data, stock market updates) | Moderate (pattern matching) | Flexible for dynamic routing based on hierarchical structures. |
+| **Fanout** | Ignored | Broadcast (e.g., notifications, cache invalidation) | Fast (no filtering) | Simple and efficient for broadcasting messages to all subscribers. |
+| **Headers** | Headers (key-value pairs) | Metadata-based routing (e.g., message priority, user roles) | Can be slower than Direct or Fanout if many headers are used. | Offers the most flexibility for complex routing based on message metadata. |
+
+**Additional Notes:**
+
+* **Headers Exchange:**
+    * Uses message headers for routing, allowing for very flexible routing rules based on custom metadata.
+    * Can be less performant than Direct or Fanout, especially with a large number of headers.
+* **Performance:** The performance characteristics mentioned are relative. Actual performance will depend on factors such as the number of queues, the number of messages, and the complexity of routing rules.
+* **Choosing the Right Exchange:** The best exchange type depends on the specific requirements of your application. Consider factors like the granularity of routing, performance needs, and the complexity of your messaging patterns.
