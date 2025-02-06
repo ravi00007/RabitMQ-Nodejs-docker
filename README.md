@@ -128,7 +128,7 @@ async function publishMessage() {
 
 publishMessage();
 
-
+```
 
 ## RabbitMQ Topic Exchange
 
@@ -176,9 +176,9 @@ async function publishMessage() {
   }
 }
 
-publishMessage();```
+publishMessage();
 
-```const amqp = require('amqplib');
+const amqp = require('amqplib');
 
 async function receiveMessages() {
   try {
@@ -200,9 +200,8 @@ async function receiveMessages() {
   }
 }
 
-receiveMessages(); ```
-
-
+receiveMessages();
+```
 
 ## RabbitMQ Fanout Exchange
 
@@ -247,10 +246,10 @@ async function publishMessage() {
   }
 }
 
-publishMessage();```
+publishMessage();
 
 
-```const amqp = require('amqplib');
+const amqp = require('amqplib');
 
 async function receiveMessages() {
   try {
@@ -281,4 +280,5 @@ async function receiveMessages() {
   }
 }
 
-receiveMessages();```
+receiveMessages();
+```
