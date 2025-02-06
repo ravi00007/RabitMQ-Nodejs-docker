@@ -77,3 +77,208 @@ A practical example demonstrating the integration of RabbitMQ in a full-stack ap
 ---  
 
 By following this guide, you will gain a solid understanding of RabbitMQ and how to leverage its capabilities to build robust message-driven applications.
+
+
+
+
+
+## RabbitMQ Direct Exchange
+
+**Functionality:**
+
+Routes messages to queues based on an exact match between the message's `routing_key` and the `binding_key` specified when a queue is bound to the exchange.
+
+**Routing Mechanism:**
+
+* Queues declare a `binding_key` (e.g., `error`).
+* Messages are delivered only to queues whose `binding_key` exactly matches the message's `routing_key`.
+
+**Use Cases:**
+
+* **Logging systems:** Categorize logs by severity (e.g., `error`, `warning`, `info`).
+* **Microservices:** Route commands (e.g., `payment.process`, `order.create`).
+
+**Example (Node.js):**
+
+**Producer:**
+
+```javascript
+const amqp = require('amqplib');
+
+async function publishMessage() {
+  try {
+    const connection = await amqp.connect('amqp://localhost');
+    const channel = await connection.createChannel();
+
+    await channel.assertExchange('direct_logs', 'direct'); // Declare the exchange
+
+    const message = 'Critical error occurred';
+    const routingKey = 'error'; 
+
+    channel.publish('direct_logs', routingKey, Buffer.from(message));
+    console.log(` [x] Sent ${message}`);
+
+    setTimeout(() => {
+      connection.close();
+    }, 500); 
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+publishMessage();
+
+
+
+## RabbitMQ Topic Exchange
+
+**Functionality:**
+
+Routes messages to queues based on wildcard patterns in binding keys.
+
+**Routing Mechanism:**
+
+* Binding keys use wildcards:
+    * `*`: Matches a single word.
+    * `#`: Matches zero or more words.
+* A message with `routing_key="stock.nyse.ibm"` matches binding keys like `stock.nyse.*` or `stock.#`.
+
+**Use Cases:**
+
+* **Multi-level categorization:** (e.g., IoT sensor data: `sensor.temperature.room1`.)
+* **Flexible routing in various domains:** (e.g., stock market updates: `stock.*.ibm` for all IBM stock updates across exchanges).
+
+**Example (Node.js):**
+
+**Producer:**
+
+```javascript
+const amqp = require('amqplib');
+
+async function publishMessage() {
+  try {
+    const connection = await amqp.connect('amqp://localhost');
+    const channel = await connection.createChannel();
+
+    await channel.assertExchange('topic_logs', 'topic'); 
+
+    const message = '{"price": 150}';
+    const routingKey = 'stock.nyse.ibm'; 
+
+    channel.publish('topic_logs', routingKey, Buffer.from(message));
+    console.log(` [x] Sent ${message} with routingKey ${routingKey}`);
+
+    setTimeout(() => {
+      connection.close();
+    }, 500); 
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+publishMessage();```
+
+```const amqp = require('amqplib');
+
+async function receiveMessages() {
+  try {
+    const connection = await amqp.connect('amqp://localhost');
+    const channel = await connection.createChannel();
+
+    const queueName = 'nyse_queue';
+    await channel.assertQueue(queueName);
+
+    await channel.bindQueue(queueName, 'topic_logs', 'stock.nyse.*'); // Bind with wildcard
+
+    channel.consume(queueName, (msg) => {
+      console.log(` [x] Received ${msg.content.toString()}`);
+    }, {
+      noAck: true 
+    });
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+receiveMessages(); ```
+
+
+
+## RabbitMQ Fanout Exchange
+
+**Functionality:**
+
+Broadcasts messages to all bound queues, regardless of the `routing_key`.
+
+**Routing Mechanism:**
+
+* No `binding_key` is used. 
+* All queues bound to the exchange receive a copy of the message.
+
+**Use Cases:**
+
+* **Publish-subscribe systems:** (e.g., real-time notifications for all users).
+* **Distributed cache invalidation:** (Notify all nodes to clear cache).
+
+**Example (Node.js):**
+
+**Producer:**
+
+```javascript
+const amqp = require('amqplib');
+
+async function publishMessage() {
+  try {
+    const connection = await amqp.connect('amqp://localhost');
+    const channel = await connection.createChannel();
+
+    await channel.assertExchange('fanout_notifications', 'fanout'); 
+
+    const message = 'System shutdown at 10 PM';
+
+    channel.publish('fanout_notifications', '', Buffer.from(message)); 
+    console.log(` [x] Sent ${message}`);
+
+    setTimeout(() => {
+      connection.close();
+    }, 500); 
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+publishMessage();```
+
+
+```const amqp = require('amqplib');
+
+async function receiveMessages() {
+  try {
+    const connection = await amqp.connect('amqp://localhost');
+    const channel = await connection.createChannel();
+
+    const queueName1 = 'queue1';
+    await channel.assertQueue(queueName1);
+    await channel.bindQueue(queueName1, 'fanout_notifications'); 
+
+    const queueName2 = 'queue2';
+    await channel.assertQueue(queueName2);
+    await channel.bindQueue(queueName2, 'fanout_notifications'); 
+
+    channel.consume(queueName1, (msg) => {
+      console.log(` [x] Received ${msg.content.toString()} on queue1`);
+    }, {
+      noAck: true 
+    });
+
+    channel.consume(queueName2, (msg) => {
+      console.log(` [x] Received ${msg.content.toString()} on queue2`);
+    }, {
+      noAck: true 
+    });
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+receiveMessages();```
