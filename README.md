@@ -141,12 +141,12 @@ Routes messages to queues based on wildcard patterns in binding keys.
 * Binding keys use wildcards:
     * `*`: Matches a single word.
     * `#`: Matches zero or more words.
-* A message with `routing_key="stock.nyse.ibm"` matches binding keys like `stock.nyse.*` or `stock.#`.
+* A message with `routing_key="stock.nyse.meta"` matches binding keys like `stock.nyse.*` or `stock.#`.
 
 **Use Cases:**
 
 * **Multi-level categorization:** (e.g., IoT sensor data: `sensor.temperature.room1`.)
-* **Flexible routing in various domains:** (e.g., stock market updates: `stock.*.ibm` for all IBM stock updates across exchanges).
+* **Flexible routing in various domains:** (e.g., stock market updates: `stock.*.meta` for all IBM stock updates across exchanges).
 
 **Example (Node.js):**
 
@@ -163,7 +163,7 @@ async function publishMessage() {
     await channel.assertExchange('topic_logs', 'topic'); 
 
     const message = '{"price": 150}';
-    const routingKey = 'stock.nyse.ibm'; 
+    const routingKey = 'stock.nyse.meta'; 
 
     channel.publish('topic_logs', routingKey, Buffer.from(message));
     console.log(` [x] Sent ${message} with routingKey ${routingKey}`);
